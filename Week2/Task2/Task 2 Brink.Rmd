@@ -1,0 +1,82 @@
+---
+title: "Task 2"
+author: "Brink"
+date: "8/31/2022"
+output: 
+    html_document:
+      theme: cosmo
+      keep_md: true 
+editor_options: 
+  chunk_output_type: console 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+install.packages("knitr")
+library(knitr)
+```
+
+```{r Task 2 Equation}
+sin(pi/4)
+```
+R functioning as calculator 
+```{r Assigning 10/3 value to x}
+x <- 10/3
+# The name of a varibale must start either either a letter on it's own, or as a combination, digits, with periods and or underscores. If it starts with a period, you cannot follow it by a number. The name of a variable can't start with a number or underscore. Names are case sensistive and reserved words such as (true, false, null) can't be used. 
+```
+add names that can't be assigned 
+
+```{r}
+MySequence <- seq(1,50, length.out = 7)
+MySequence
+```
+Creating and assigning sequence to operator 
+
+```{r}
+my_vector <- c(1, 5, 12, 31, 19)
+```
+Assign my_vector to values
+
+```{r}
+7 + 5 ==12
+```
+== makes statement true regardless of any other circumstances
+
+```{r}
+(7 + 4 = 12)|(5 - 4 = 1)
+#The error in the output occurs when you try to assign or use a value within an equation, that does not exist. Or, R can't treat it as a name or true statement. 
+```{r}
+my_variable <- 10
+my_varıable
+#> Error in eval(expr, envir, enclos): object 'my_varıable' not found
+#> The cause for the error lies in the fact that the i in the first my_variable does not smatch the latin dotless i that is in the bottom my_variable. This could either be due to a hypothetical typo or if the object was never originially created, or if there is a missing package that was not loaded.
+```
+
+```{r}
+library(tidyverse)
+
+ggplot(dota = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+fliter(mpg, cyl = 8)
+filter(diamond, carat > 3)
+```
+#Most of the errors in the code chunk above are typos. For example, the first issue with the chunk above is that 'dota' should be spelled as 'data'. The next typo was with 'fliter' which should have been 'filter'. Finally the object listed in the code, 'diamond', does not exist. It should be 'diamonds', which does exist. 
+```{r}
+library(tidyverse)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+filter(mpg, cyl == 8)
+filter(diamonds, carat > 3)
+```
+
+
+```{r alt+shift+k}
+#Provides menu with keyboard shortcuts, can also be accessed under toools -> Keyboard Shortcuts Help
+```
+
