@@ -1,0 +1,33 @@
+---
+title: "Case Study 2"
+author: "Brink"
+date: "9/5/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+library(tidyverse)
+
+urlfile="https://github.com/WJC-Data-Science/DTS350/raw/master/coral.csv"
+mydata <- read_csv(url(urlfile))
+head(mydata)
+str(data)
+tail(data)
+```
+
+```{r}
+ggplot(mydata, aes(fill=Event, y=Value, x=Year)) +
+  geom_bar(position="stack", stat="identity") +
+  facet_wrap(~ Entity, nrow = 3, scales = "free")+
+  scale_fill_manual(values = c('navy', 'maroon'))
+```
+
+```{r}
+ggplot(mydata) +
+   geom_smooth(mapping=aes(x= Year, y=Value, linetype= Entity))
+#This chunk uses code from the previous class period to track the amount of events by entity over time. Austrailia began to trend towards higher values, or more events, at the end of the data set. 
+```
+
