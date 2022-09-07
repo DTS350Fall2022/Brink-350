@@ -1,0 +1,72 @@
+---
+title: "Task 4"
+author: "Brink"
+date: "9/6/2022"
+output: 
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load Packages and convert to tibble}
+library(tidyverse)
+iris.data <- as_tibble(iris)
+iris.data
+```
+
+```{r sorting by Sepal.Length}
+a.sepal <- arrange(iris, Sepal.Length)
+head(a.sepal,10)
+```
+
+```{r testing the select function}
+testdat <- select(iris.data,Species,Petal.Width)
+testdat
+```
+
+```{r create dataframe for mean}
+Species_Mean <-iris.data %>%
+  group_by(Species) %>%
+  summarise(mean(Petal.Width), mean(Petal.Length), mean(Sepal.Length), mean(Sepal.Width))
+Species_Mean
+```
+
+```{r dataframe for iris using filter }
+iris_min1 <- select(iris.data, Sepal.Width, Petal.Width)
+iris_min <- filter(iris_min1, Sepal.Width >= 3, Petal.Width != 2.5)
+iris_min
+```
+
+```{r creating iris_size}
+iris_size <- iris.data %>%
+  mutate(Sepal.Size =
+           case_when(
+             Sepal.Length < 5 ~ "small",
+             Sepal.Length >= 5 & Sepal.Length < 6.5 ~ "medium",
+             Sepal.Length >= 6.5 ~ "large"))
+head(iris_size)
+```
+```{r creating iris_rank}
+iris_rank <- arrange(iris.data, desc(Petal.Length))
+mutate(iris_rank, rank=min_rank(Petal.Length))
+```
+
+
+```{r summarizing mean and std}
+?summarise_all
+means_sd_species <- iris.data %>%
+  group_by(Species) %>%
+  summarize_all(list(Mean=mean, Std_dev = sd))
+means_sd_species
+```
+```{r Report}
+#Question 1: How has Grand Theft Auto 5 sustained it's sales through multiple console generations?
+#Question 2: Is the average age of gambling addicts decreasing over time? 
+#Question 3: How does the amount of studio acquisitions and publisher make impact yearly annual revenue?
+#Feedback 5-10 People Summary: A common piece of feedback was that the questions were in fields that I could personality relate to, making it easier to analyze chunks of data if I were to seek them out. Also how the questions took concepts that most people understand and seek to uncover a layer of the data that the general public may not have thought of.  
+#Feedback Professional Summary: In regards to two of the questions, they both revolve around the video game industry. The industry itself is constantly evolving and it's people noted how companies are adapting to the market by focusing on quantity rather than quality. Feedback was strong about the gambling question as well, with some noting the unique angle of the question, and how it targeted the youth. A final common comment was the vast potential with various data sets with these questions. The problem comes down to finding it. 
+```
+
