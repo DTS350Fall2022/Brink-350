@@ -1,0 +1,70 @@
+---
+title: "Case Study 3"
+author: "Brink"
+date: "9/12/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+    
+---
+```{r Load Packages}
+library(tidyverse)
+library(gapminder)
+library(gridExtra)
+library(dplyr)
+library(downloader)
+```
+
+```{r Test}
+str(gapminder)
+gapminder
+```
+```{r Seperate Kuwait into new Dataframe}
+WealthLife <- gapminder %>%
+  filter(country != 'Kuwait')
+head(WealthLife)
+WealthLife
+```
+```{r Creating top graph}
+p1 <- ggplot(data = WealthLife) +
+  geom_point(mapping = aes(x = lifeExp, y = gdpPercap, 
+                           color = continent, size = pop/100000)) +
+  facet_wrap(~ year, nrow = 1) +
+  scale_y_continuous(trans = "sqrt") +
+  scale_size_continuous(name = "Population (100k)")+
+  xlab("Life Expectancy") + 
+  ylab("GDP per capita") +
+  theme_bw()
+p1
+```
+```{r summarizing weighted mean}
+weighted_GDP <- WealthLife %>%
+  group_by(year,continent) %>%
+  summarise(GDP_Weight = weighted.mean(gdpPercap),
+            population = pop/10000)
+```
+
+
+
+
+```{r second graph}
+p2 <- ggplot(data = WealthLife, aes(x = year, y = gdpPercap)) +
+  geom_point(mapping = aes(color = continent)) +
+  geom_line(mapping = aes(color = continent, group = country)) +
+  geom_point(data = weighted_GDP, mapping = aes(x = year, y = GDP_Weight, size = population)) +
+  geom_line(data = weighted_GDP, mapping = aes(x = year, y = GDP_Weight)) +
+  facet_wrap(~continent, nrow = 1) +
+  xlab("Year") + ylab("GDP per capita") +
+  scale_size_continuous(name = "Population (100k)", breaks = c(10000, 20000,30000)) +
+  theme_bw()
+p2
+```
+
+```{r put graphs together}
+grid.arrange(p1, p2, nrow = 2)
+```
+
+
+
+
+
