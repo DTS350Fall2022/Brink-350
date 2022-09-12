@@ -1,0 +1,89 @@
+---
+title: "Task 5"
+author: "Brink"
+date: "9/8/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+    code_folding: 'hide'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(downloader)
+```
+
+All data showed to be imported correctly in the form of characters
+```{r}
+solodata <- read_csv("solo-artist-followers.csv")
+solodata
+str(solodata)
+```
+ 
+Correct import for data type for date, title,name,band as character
+```{r}
+billboard_data<- read_csv("billboard-hits.csv")
+billboard_data
+str(billboard_data)
+head(billboard_data)
+```
+
+Singers without 6 top 100 hits
+```{r}
+sixtop100 <- billboard_data %>%
+  group_by(name) %>%
+  filter(n() > 6, band != "")
+sixtop100
+```
+144 rows
+
+```{r}
+sixtopbands <- billboard_data %>%
+  group_by(band) %>%
+  filter(name %in% sixtop100$band)
+head(sixtopbands)
+```
+
+```{r}
+ggplot(data = sixtop100, aes(x=peak_date, y=peak_rank, color=name, group=name)) +
+  geom_point() +
+  geom_line() +
+  geom_point(data = sixtopbands, color="black") +
+  geom_line(data = sixtopbands, color="black", linetype = "dotted") +
+  facet_wrap(~ band, scales = "free") +
+  xlab("peak_rank") + ylab("peak_rank") +
+  theme_bw()
+```
+OBSERVATIONS: The thriving appeal of group based music artists continued over time, some failed due to the lack of adapting to modern social media demands. This allowed groups like One Direction and Fifth Harmony to thrive and Destiny's Child and New Edition to fall, until nostalgia brings them back. 
+
+https://www.kaggle.com/datasets/gregorut/videogamesales?resource=download
+This data set ranks data collected by vgchartz which categorizes highest sales based on platofrom, genre, publisher, as well as sales related to geographical locations. 
+```{r}
+videogamesales <- read_csv("vgsales.csv")
+videogamesales
+str(videogamesales)
+```
+ALL CHARACTER VALUES
+
+http://www.thetransparencyproject.org/download_index.php
+This package contains the analytic data set for the first longitudinal analysis of online gambling participation and activity among a population of newly subscribed Internet bettors
+```{r}
+gamblingdata <- read_csv("PopTrendsBData1Fixed.csv")
+gamblingdata
+str(gamblingdata)
+```
+ALL CHARACTER VALUES
+
+https://www.kaggle.com/datasets/johnharshith/hollywood-theatrical-market-synopsis-1995-to-2021
+The Dataset contains various files illustrating statistics such as annual ticket sales, highest grossers each year since 1995, top grossing creative types, top grossing distributors, top grossing genres, top grossing MPAA ratings, top grossing sources, top grossing production methods and the number of wide releases each year by various distributors.
+```{r}
+ticketsales <- read_csv("AnnualTicketSales.csv")
+ticketsales
+str(ticketsales)
+```
+ALL CHARACTER VALUES
