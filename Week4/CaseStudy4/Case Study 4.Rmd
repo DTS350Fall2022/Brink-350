@@ -1,0 +1,104 @@
+---
+title: "Case Study 4"
+author: "Brink"
+date: "9/19/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+    code_folding: 'hide'
+---
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
+library(ggplot2)
+library(readr)
+library(knitr)
+library(dplyr)
+library(forcats)
+library(downloader)
+```
+
+```{r}
+?flights
+str(flights)
+head(flights)
+```
+Question 1. If I am leaving before noon, which two airlines do you recommend at each airport (JFK, LGA, EWR) that will havethe lowest delay time at the 75th percentile?
+
+When approaching this question, I knew that I had to make a ggplot for all of EWR, JFK, and LGA. The code between these are similar, with simply keeping the x as carrier and y as arrival delay, it was clear to see that OO and HA were the most efficent airlines.
+
+```{r}
+EWRdata <- filter(flights, origin == "EWR")
+head(EWRdata)
+```
+
+```{r}
+EWRplot <- ggplot(data = EWRdata, mapping = aes(x = carrier, y = arr_delay, size = arr_delay, color = carrier)) +
+  geom_point()+
+  labs(x = "Carriers",
+       y = "Arrival Delay",
+       title = "Airlines with lowest arrival time at EWR",
+       subtitle = "Skywest Arilines INc. & Alaska Airlines Inc. have lowest arrival delay") +
+  theme_bw()
+EWRplot
+```
+
+```{r}
+JFKdata <- filter(flights, origin == "JFK")
+head(JFKdata)
+```
+
+```{r}
+JFKplot <- ggplot(data = JFKdata, mapping = aes(x = carrier, y = arr_delay, size = arr_delay, color = carrier)) +
+  geom_point() +
+  labs(x = "Carriers",
+       y = "Arrival Delay",
+       title = "Airlines with lowest arrival time at JFK",
+       subtitle = "Hawaiian Arilines Inc. & US Airways Inc. have lowest arrival delay") +
+  theme_bw()
+JFKplot
+```
+
+```{r}
+LGAdata <- filter(flights, origin == "LGA")
+head(LGAdata)
+```
+
+```{r}
+LGAplot <- ggplot(data = LGAdata, mapping = aes(x = carrier, y = arr_delay, size = arr_delay, color = carrier)) +
+  geom_point() +
+  labs(x = "Carriers",
+       y = "Arrival Delays",
+       title = "Airlines with lowest arrival time at LGA",
+       subtitle = "Skyest Airlines Inc. & Endeavor Air Inc. have lowest arrival delay") +
+  theme_bw()
+LGAplot
+```
+Which origin airport is best to minimize my chances of a late arrival when I am using Delta Airlines?
+
+EWR is the the best airport to fly with Delta as it has the lowest amount of arrival delays.
+```{r Question 2}
+Delta <- filter(flights, carrier == "DL", )
+ggplot(Delta, aes(x = origin, y = arr_delay))+
+  geom_count()+
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+Question 3: Which destination airport is the worst airport for arrival time?
+
+Keep same ggplot code, except swap X for origin.
+```{r}
+WorstAirline <- ggplot(data = flights, mapping = aes(x = origin, y = arr_delay, color = origin, size = arr_delay)) +
+  geom_point() +
+  labs(x = "Origin Airport", 
+       y = "Arrival Delay",
+       title = "Airports with the worst arrival time",
+       subtitle = "JFK is the worst location to fly with",
+       caption = "High density of points") +
+  theme_bw()
+WorstAirline
+```
+
