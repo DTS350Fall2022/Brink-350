@@ -1,0 +1,46 @@
+---
+title: "TASK 11 Tidy Data"
+author: "Brink"
+date: "10/3/2022"
+output: 
+  html_document:
+    code_folding: 'hide'
+    keep_md: TRUE
+---
+```{r}
+library(tidyverse)
+library(downloader)
+library(readxl)
+```
+
+```{r}
+movie_data <- tempfile()
+download("https://raw.githubusercontent.com/fivethirtyeight/data/master/fandango/fandango_score_comparison.csv", movie_data, mode = "wb")
+movie_ratings <- read_csv(movie_data)
+str(movie_ratings)
+```
+
+```{r}
+ratings <- movie_ratings %>%
+  select(FILM, Fandango_Ratingvalue, RT_norm, Metacritic_norm, IMDB_norm) %>%
+  pivot_longer(2:5, names_to = "source", values_to = "score") %>%
+  select(FILM, source, score) %>%
+  head(n = 28)
+ratings
+```
+
+```{r}
+compared_critics <- ggplot(ratings, aes(x = FILM, y = score, color = source)) +
+  geom_col(position='dodge') +
+  scale_x_discrete(guide = guide_axis(n.dodge=5))+
+  scale_y_discrete( 
+                    limits = c("1","2","3","4","5"), breaks = c("1","2","3","4","5")) +
+  scale_color_discrete(name = "Critic", labels = c("Rotten Tomatoes", "Metacritic", "IMDB","Fandango")) +
+  scale_fill_grey(start = 0, end = 1, na.value = "red")
+  labs(x = 'Film', y = 'Score', title = 'Film Review Scores based on online Critics') +
+  theme_bw()
+compared_critics
+```
+
+
+
