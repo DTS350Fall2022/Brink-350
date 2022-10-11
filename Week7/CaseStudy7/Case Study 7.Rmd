@@ -1,0 +1,123 @@
+---
+title: "Case Study 7"
+author: "Brink"
+date: "10/10/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+    code_folding: 'hide'
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(haven)
+library(downloader)
+library(foreign)
+library(readxl)
+```
+```{r}
+germanconscript <- read_dta(url("https://github.com/WJC-Data-Science/DTS350/blob/master/germanconscr.dta?raw=true"))
+
+germanprison <- read_dta(url("https://github.com/WJC-Data-Science/DTS350/blob/master/germanprison.dta?raw=true"))
+
+heights <- read_csv(url("https://raw.githubusercontent.com/hadley/r4ds/master/data/heights.csv"))
+
+heights2 <- tempfile()
+download("https://github.com/WJC-Data-Science/DTS350/blob/master/Height.xlsx?raw=true", heights2, mode = "wb")
+
+heights1 <- read_xlsx(heights2, skip = 2)
+heights_se <- tempfile()
+download("https://github.com/WJC-Data-Science/DTS350/raw/master/Heights_south-east/B6090.DBF?raw=true", heights_se, mode = "wb")
+se_heights <- read.dbf(heights_se)
+
+```
+```{r}
+WisconsinData=read.spss("http://www.ssc.wisc.edu/nsfh/wave3/NSFH3%20Apr%202005%20release/main05022005.sav", to.data.frame=TRUE)
+write.table(WisconsinData,"Wisconsin.csv")
+```
+
+```{r}
+str(WisconsinData)
+```
+
+
+```{r}
+heights_tidy <- heights1 %>%
+  pivot_longer(3:203, names_to = "years", values_to = "heights.cm", values_drop_na = TRUE) %>%
+  mutate(year_decade = years, height.in = heights.cm / 2.54) %>%
+  separate(years, into = c("century", "decade"), sep = -2) %>%
+  separate(decade, into = c("decade", "year"), sep = -1)
+write.csv(heights_tidy, "heights_tidy.csv", row.names = TRUE)
+```
+```{r}
+German_Conscript <- germanconscript %>%
+  mutate(birth_year = bdec,
+         height.cm = height,
+         height.in = height.cm / 2.54,
+         study_id = 'germanconscript') %>%
+  select(birth_year, height.cm, height.in, study_id)
+
+German_Prison <- germanprison %>%
+  mutate(birth_year = bdec,
+         height.cm = height,
+         height.in = height.cm / 2.54,
+         study_id = 'germanprison') %>%
+  select(birth_year, height.cm, height.in, study_id)
+
+heights_data <- heights %>%
+  mutate(birth_year = 1950,
+         height.cm = height * 2.54,
+         height.in = height,
+         study_id = 'heights') %>%
+  select(birth_year, height.cm, height.in, study_id)
+
+SouthEast_heights_data <- se_heights %>%
+  mutate(birth_year = SJ,
+         height.cm = CMETER,
+         height.in = CMETER / 2.54,
+         study_id = 'se_heights') %>%
+  select(birth_year, height.cm, height.in, study_id)
+
+Wisconsin_Tidy <- WisconsinData %>%
+  mutate(birth_year = as.numeric(DOBY) + 1900,
+         height.cm = RT216I * 2.54,
+         height.in = RT216I,
+         study_id = 'WisconsinData') %>%
+  select(birth_year, height.cm, height.in, study_id)
+```
+```{r}
+head(WisconsinData)
+```
+
+
+```{r}
+combine <- bind_rows(German_Conscript,German_Prison,heights_data,SouthEast_heights_data,Wisconsin_Tidy)
+write.csv(combine, "Combined.csv", row.names = TRUE)
+```
+
+```{r}
+germany_filter <- heights_tidy %>%
+  filter(`Continent, Region, Country` == 'Germany')
+```
+
+```{r}
+ggplot(data = heights_tidy, aes(x = year_decade, y = height.in)) +
+  geom_boxplot(alpha = 0.5) +
+  geom_point(data = germany_filter, color = "red") +
+  theme_bw() +
+  labs(x = "Decade",
+       y = "Height in.",
+       title = "Heights Across Decades in Respect to Germany")
+```
+
+```{r}
+ggplot(combine, aes(x = birth_year, y = height.in)) +
+  geom_col() +
+  facet_wrap(~ study_id, scales = 'free') +
+  theme_bw() +
+  labs(x = "Birth Year",
+       y = "Height Quantities",
+       title="Relationships between Combined Data")
+```
+Upon comparing the visualizations made for the Germanic data and the faceted graphs, specifically while looking at the Wisconsin Chart, it's clear that growth is happening in the average height of those surveyed. Location seems to have little to do with the acceleration of height in any form. If we were to look at a hypothesis, it would seem that nature beats nurture. 
