@@ -1,0 +1,66 @@
+---
+title: "Task 14"
+author: "Brink"
+date: "10/19/2022"
+output: 
+  html_document:
+    code_folding: 'hide'
+    keep_md: TRUE
+---
+
+#Packages
+```{r}
+library(tidyverse)
+library(stringi)
+library(stringr)
+library(downloader)
+library(readr)
+```
+
+#Temp file for bible data
+```{r}
+bibledata <- tempfile()
+download.file("https://github.com/WJC-Data-Science/DTS350/raw/master/bible.csv",bibledata, mode="wb")
+bibledata
+bible <- read_csv(bibledata)
+head(bible)
+```
+
+# Create Word Counter
+```{r}
+wordcount <- bible %>%
+  mutate(word_count =
+           sapply(bible$scripture_text, function(x) length(unlist(strsplit(as.character(x), "\\W+"))))
+  )
+```
+
+# Old Testament average
+```{r}
+OldTest <- wordcount %>%
+  subset(volume_id == 1)
+mean(OldTest$word_count)
+```
+
+# New Testament average
+```{r}
+NewTest <- wordcount %>%
+  subset(volume_id == 2)
+mean(NewTest$word_count)
+```
+# Finding lord frequency 
+```{r}
+str_count(OldTest, "(?i)lord")
+str_count(NewTest, "(?i)lord")
+```
+# Question 3 Visualization
+```{r}
+ggplot(data = NewTest, aes(x = verse_number, y = word_count)) +
+  geom_col() +
+  facet_wrap(~book_title, scales = 'free') +
+  theme_bw() +
+  labs(x = "Verse Number",
+       y = "Word Count",
+       title = "New Testament Word Average by Verse Number")
+```
+
+# As shown in the code above, the calculated word average for the Old Testament was 26.4 whereas the New Testament average was found to be 22.7. For the answer to question 2, Lord was found to have been used 7273 times in the Old Testament, but only was used 736 times. This makes sense as the Old Testament focuses more on the origins of Christ and his relationship with the lord, whereas the New Testament is focused on everything after that, however I am not in tune too much with my spirtual side so I could be wrong on that. For question 3, one observation that I made was that the large majority of books begin with a lot of words in the beginning verse numbers but suffers a drop off towards the end. 
