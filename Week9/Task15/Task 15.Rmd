@@ -1,0 +1,83 @@
+---
+title: "Task 15"
+author: "Brink"
+date: "10/24/2022"
+output: 
+  html_document:
+    code_folding: 'hide'
+    keep_md: TRUE
+---
+
+#Packages
+```{r}
+library(lubridate)
+library(downloader)
+library(tidyverse)
+library(riem)
+library(gridExtra)
+```
+#Download File
+```{r}
+temp <- tempfile()
+download.file("https://github.com/WJC-Data-Science/DTS350/raw/master/carwash.csv", temp, mode = "wb")
+CW <- read_csv(temp)
+```
+# Check data
+```{r}
+head(CW)
+tail(CW)
+str(CW)
+view(CW)
+```
+#Convert to Mountain Time
+```{r}
+CWM <- with_tz(CW, tzone = "US/Mountain")
+view(CWM)
+```
+
+#Group variable
+```{r}
+?ceiling_date
+
+CWH <- CWM %>%
+  mutate(hour = ceiling_date(time, "hour"))
+```
+
+#Aggregate sales into hours
+```{r}
+?aggregate
+
+CWF <- CWH %>%
+  group_by(hour) %>%
+  summarise(across(amount, sum))
+
+view(CWF)
+```
+
+#Find matching temperatures
+```{r}
+m <- riem_measures(station = "RXE",  date_start = "2016-05-13",  date_end  = "2016-07-18") %>%
+  with_tz(tzone = "US/Mountain") %>%
+  filter(tmpf != " ") %>%
+  mutate(hour =  ceiling_date(valid, "hour")) %>%
+  select(hour, tmpf)
+```
+
+#Merge datasets
+```{r}
+combo <- merge(CWF, m, by = "hour") %>%
+  arrange(hour) %>%
+  mutate(nh = hour(hour))
+
+view(combo)
+```
+
+
+#Visualization for sales vs temperature 
+```{r}
+combograph <- ggplot(data=combo, mapping=aes(x=nh,y=amount))+
+  geom_col()+
+  labs(title="Sales by Hour", x="Hour", y="Sales") 
+combograph
+```
+
