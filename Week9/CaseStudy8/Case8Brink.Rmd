@@ -1,0 +1,101 @@
+---
+title: "Case Study 8"
+author: "Brink"
+date: "10/24/2022"
+output: 
+  html_document:
+    theme: united
+    keep_md: True
+    code_folding: 'hide'
+---
+```{r}
+library(knitr)
+library(tidyverse)
+library(downloader)
+library(lubridate)
+library(riem)
+```
+
+```{r}
+Sales <- tempfile()
+  download.file("https://github.com/WJC-Data-Science/DTS350/raw/master/sales.csv", Sales,   mode = "wb")
+SD <- read_csv(Sales)
+
+tail(SD)
+```
+
+```{r}
+SDTZ <- with_tz(SD, tzone = "US/Mountain")
+```
+
+```{r}
+timedat <- SDTZ %>%
+  mutate(hourofday = hour(Time)) %>%
+  mutate(dayofweek = wday(Time, label = TRUE, abbr = FALSE)) %>%
+  mutate(weekofyear = week(Time)) %>%
+  mutate(monthofyear = month(Time))
+```
+
+```{r}
+ophours <- timedat %>%
+  group_by(Name, hourofday) %>%
+  select(Name, Amount, hourofday) %>%
+  filter(Name != "Missing")
+```
+
+
+```{r}
+ggplot(ophours, aes(x = hourofday, y = Amount, color = Name,  na.rm = TRUE)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Name, nrow = 2) +
+  labs(x = "Hours through Day",
+       y = "Sales through Day",
+       title = "Recomended Hours of Operation based on Hour Partitions") 
+  theme_bw()
+```
+As logic would dictate, the most popular time of day is the middle of the day, arguably peaking around noon. Ensuring that there is staff coverage and inventory for this time is essential. 
+
+```{r}
+opday <- timedat %>%
+  group_by(Name, dayofweek) %>%
+  select(Name, Amount, dayofweek) %>%
+  filter(Name != "Missing")
+```
+
+
+```{r}
+head(timedat)
+
+plot2 <- ggplot(opday, aes(x = dayofweek, y = Amount, color = Name,  na.rm = TRUE)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ Name, nrow = 2) +
+  scale_x_discrete(label=abbreviate)+
+  guides(x = guide_axis(angle = 90))+
+  labs(x = "Days of Week",
+       y = "Sales through Day",
+       title = "Recomended Hours of Operation based on Day Partitions") 
+  theme_bw()
+plot2
+```
+Customer traffic is pretty consistent amongst the weekdays across all businesses, however it's clear that one observation you can draw is that there is less than average activity on the weekends (Saturday and Sunday)
+
+```{r}
+finalsum <- SDTZ %>%
+  group_by(Name) %>%
+  summarise(across(Amount, sum)) %>%
+  filter(Name != "Missing")
+```
+
+```{r}
+ggplot(finalsum, aes(x = Name, y = Amount, fill = Name)) +
+  geom_col() +
+  scale_x_discrete(label=abbreviate)+
+  guides(x = guide_axis(angle = 90))+
+  labs(x = "Business Titles",
+       y = "Revenue Sum",
+       title = "Final Comparison between all companies surveyed") +
+  theme_bw()
+```
+After looking at a raw comparison between all 6 companies, HotDiggity is far and away the king of the market that we are taking data from. Frozone seems to be struggling by a massive margin. I would reccomend that competiting companies shadow their business strategies. Based on the chart made for the daily data, it appears that Frozone is not open on sundays. They could be open on this day and add an additional day to their revenue stream. 
