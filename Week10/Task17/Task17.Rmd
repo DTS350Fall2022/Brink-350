@@ -1,0 +1,72 @@
+---
+title: "Task 17"
+author: "Brink"
+date: "11/2/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+library(ggplot2)
+library(readr)
+library(knitr)
+library(tidyverse)
+library(dplyr)
+library(forcats)
+library(downloader)
+library(corrplot)
+library(tidyquant)
+library(timetk)
+library(dygraphs)
+```
+Stocks I chose: MSFT (Microsoft), SONY (Sony), NTDOF (Nintendo)
+Stocks my friend chose Meta (Facebook), ATVI (Activision Blizzard), TTWO (Take Two Interactive)
+
+```{r}
+(Microsoft <- tq_get("MSFT", get = "stock.prices"))
+(Sony <- tq_get("SONY", get = "stock.prices"))
+(Nintendo <- tq_get("NTDOF", get = "stock.prices"))
+(Meta <- tq_get("META", get = "stock.prices"))
+(Activision <- tq_get("ATVI", get = "stock.prices"))
+(TakeTwo<- tq_get("TTWO", get = "stock.prices"))
+```
+My Stocks
+```{r}
+MyStock <- tq_get(c("MSFT", "SONY", "NTDOF"), get = "stock.prices", from = "2021-11-11", to = today())
+head(MyStock)
+tail(MyStock)
+```
+Friend Stock
+```{r}
+FriendStock <- tq_get(c("META", "ATVI", "TTWO"), get = "stock.prices", from = "2021-11-11", to = today())
+head(FriendStock)
+tail(FriendStock)
+```
+All
+```{r}
+Both <- tq_get(c("MSFT", "SONY", "NTDOF","META", "ATVI", "TTWO"), get = "stock.prices", from = "2021-11-11", to = today())
+head(Both)
+tail(Both)
+```
+Winning Chart
+```{r}
+Combined <- Both %>%
+  select(symbol, date, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  tk_xts(date_var = date)
+dygraph(Combined)
+```
+To me the most interesting observation that you can make from the dygraph above is the strong performance of Take Two Interactive. Mainly because they are exclusively a software company, whereas Sony is both, which it ranks above. The success of Grand Theft Auto 5 keeps their stock price higher than it's product distributors. 
+
+```{r}
+Both %>%
+  filter(symbol == "TTWO") %>%
+  ggplot(aes(x = date, y = adjusted)) +
+  geom_candlestick(aes(open = open, high = high, low = low, close = close)) +
+  labs(title = "Take Two Candlestick Chart", 
+       y = "Closing Price", x = "") + 
+  theme_tq()
+```
+As a quick analyzation of the Candlestick chart above, which was chosen to isolate this specific company, shows a dip in this past Summer. My best guess as to what the cause of this was the shutdown of the online portion of it's most recent release (2018), Red Dead Redemption 2. There was much social outcry of this decision as well as the disatrious release of it's extremely sub-par Grand Theft Auto: The Definitive Trilogy release. It will likely skyrocket back up once the marketing cycle begins for Grand Theft Auto 6, which leaked to the internet about a month ago and should be coming any time soon.
