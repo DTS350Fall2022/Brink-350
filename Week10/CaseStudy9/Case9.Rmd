@@ -1,0 +1,115 @@
+---
+title: "Case 9"
+author: "Brink"
+date: "11/2/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(ggplot2)
+library(readr)
+library(knitr)
+library(tidyverse)
+library(dplyr)
+library(forcats)
+library(downloader)
+library(corrplot)
+library(tidyquant)
+library(timetk)
+library(dygraphs)
+library(scales)
+```
+
+```{r}
+tickers_today <- tq_get(c("CXW", "F", "GM", "JCP", "KR", "WDC", "NKE","T", "WDAY", "WFC", "WMT"), get = "stock.prices", from = today()-years(5), to = today())
+head(tickers_today)
+```
+Graph setup
+```{r}
+setup <- tickers_today %>%
+  select(symbol, date, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  tk_xts(date_var = date)
+
+dygraph(setup, main = "Ticker Chart") %>%
+  dyRebase(percent = TRUE) %>%
+  dyShading(from = today()-years(5), to = today()) %>%
+  dyRangeSelector()
+```
+2nd dy Chart
+```{r}
+monthlyReturns <- tickers_today %>%
+  group_by(symbol) %>%
+  tq_transmute(adjusted, mutate_fun = monthlyReturn) %>%
+  select(symbol, date, monthly.returns) %>%
+  pivot_wider(names_from = symbol, values_from = monthly.returns) %>%
+  tk_xts(date_var = date)
+monthlyReturns
+
+dygraph(monthlyReturns, main = "Stock Comparison Monthly Returns") %>%
+  dyOptions(colors = RColorBrewer::brewer.pal(3, "Set2"))
+```
+
+GGPlot Visualization (Volume Chart)
+```{r}
+volume <- tickers_today %>%
+  select(symbol, date, volume)
+head(volume)
+
+volumechart <- ggplot(data = volume, mapping = aes(x = date, y = volume, color = symbol)) +
+  geom_line() +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(~symbol)
+volumechart
+```
+After reading in the data, I first had to create a dataframe (setup) in order to convert the tickers we were given into XTS in order to graph them using a time series plot through dygraph. The dyrebase and dyshading were added to set a base value percentage for the chart to refer to as it shows the data from the last 5 years. While creating an additional plot using dygraphs, I referred to the Day17TidyquantTimeTK class code to build a plot that didn't refer from the last 5 years, but compared the respective stock with it's performance in the previous year. The most notable aspect to the volume chart is that I felt it essential to convert the yaxis into digestable numbers because as an average observer you can't really put the chart results into perspective until you see those full values. 
+
+Section 2 (My Stocks)
+```{#r}
+MyStocks <- tq_get(c(*INSERT VALUES*), get = "stock.prices", from = today()-years(5), to = today())
+head(MyStocks)
+```
+
+Setup for first DY
+```{#r}
+setup <- MyStocks %>%
+  select(symbol, date, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  tk_xts(date_var = date)
+
+dygraph(MyStocks, main = "Ticker Chart") %>%
+  dyRebase(percent = TRUE) %>%
+  dyShading(from = today()-years(5), to = today()) %>%
+  dyRangeSelector()
+```
+
+Setup for second DY
+```{#r}
+monthlyReturns <- MyStocks %>%
+  group_by(symbol) %>%
+  tq_transmute(adjusted, mutate_fun = monthlyReturn) %>%
+  select(symbol, date, monthly.returns) %>%
+  pivot_wider(names_from = symbol, values_from = monthly.returns) %>%
+  tk_xts(date_var = date)
+monthlyReturns
+
+dygraph(monthlyReturns, main = "Stock Comparison Monthly Returns") %>%
+  dyOptions(colors = RColorBrewer::brewer.pal(3, "Set2"))
+```
+
+Setup for GGplot volume
+```{#r}
+volume <- MyStocks %>%
+  select(symbol, date, volume)
+head(volume)
+
+volumechart <- ggplot(data = volume, mapping = aes(x = date, y = volume, color = symbol)) +
+  geom_line() +
+  facet_wrap(~symbol)
+volumechart
+```
+
