@@ -1,0 +1,131 @@
+---
+title: "Case 10"
+author: "Brink"
+date: "11/7/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r}
+library(ggplot2)
+library(readr)
+library(knitr)
+library(dplyr)
+library(forcats)
+library(downloader)
+library(corrplot)
+library(tidyquant)
+library(timetk)
+library(dygraphs)
+library(scales)
+library(tidyverse)
+library(sf)
+library(USAboundaries)
+library(maps)
+library(ggsflabel)
+library(devtools)
+library(plotly)
+library(gridExtra)
+library(remotes)
+library(stringr)
+```
+
+```{r}
+permit_data <- tempfile()
+download("https://raw.githubusercontent.com/WJC-Data-Science/DTS350/master/permits.csv", 
+         permit_data, mode = "wb")
+permits <- read_csv(permit_data)
+```
+
+```{r}
+head(permits)
+counties <- us_counties()
+```
+```{r}
+FIPSsetup<-permits%>%
+  mutate(state=as.character(state), stateFIPS=str_pad(state, 2,pad="0")) %>%
+  mutate(county=as.character(county), countyFIPS=str_pad(county, 3,pad="0"))
+FIPSsetup
+```
+
+```{r}
+FIPS <- FIPSsetup %>%
+  mutate(geoid=paste0(stateFIPS,countyFIPS))
+```
+
+```{r}
+county_FIPS_data <- merge(FIPS,counties, by = "geoid") %>%
+  group_by(state_name,year) %>%
+  summarise(across(value, sum))
+```
+
+```{r}
+USA <- ggplot(data = county_FIPS_data, aes(x = year, y = value, color = state_name)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Permit Amount") +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(legend.position = 'none') 
+ggplotly(USA)
+```
+
+```{r}
+Missouri <- county_FIPS_data %>%
+  filter(state_name == 'Missouri') %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_point() +
+  geom_line() +
+  labs(title="Missouri",x = 'Year', y = 'Permit Amount') +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(legend.position = 'none')
+Missouri
+```
+
+```{r}
+Kansas <- county_FIPS_data %>%
+  filter(state_name == 'Kansas') %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_point() +
+  geom_line() +
+  labs(title="Kansas",x = 'Year', y = 'Permit Amount') +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(legend.position = 'none')
+Kansas
+```
+
+```{r}
+Nebraska <- county_FIPS_data %>%
+  filter(state_name == 'Nebraska') %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_point() +
+  geom_line() +
+  labs(title="Nebraska",x = 'Year', y = 'Permit Amount') +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(legend.position = 'none')
+Nebraska
+```
+
+
+```{r}
+Iowa <- county_FIPS_data %>%
+  filter(state_name == 'Iowa') %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_point() +
+  geom_line() +
+  labs(title="Iowa",x = 'Year', y = 'Permit Amount') +
+  scale_y_continuous(labels = comma) 
+  theme_bw() +
+  theme(legend.position = 'none')
+Iowa
+```
+
+
+```{r}
+grid.arrange(USA, Missouri, Kansas, Nebraska, Iowa, nrow = 3)
+```
+After finally being able to integrate the FIPS numbers with the permit data and after testing the results with surrounding border states of Missouri, that the midwest border states actually buck the trend shown in the United States wide chart. In the decade between 1990 and 2000, the majority of the U.S experienced a decrease in permits, but all of the states shown in the data above show growth or neutraility in that time period, with no sembelence of a decrease at all.
