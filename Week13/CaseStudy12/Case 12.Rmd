@@ -1,0 +1,147 @@
+---
+title: "Case 12"
+author: "Brink"
+date: "11/28/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(readr)
+library(knitr)
+library(dplyr)
+library(forcats)
+library(downloader)
+library(corrplot)
+library(tidyquant)
+library(timetk)
+library(dygraphs)
+library(scales)
+library(tidyverse)
+library(sf)
+library(USAboundaries)
+library(maps)
+library(ggsflabel)
+library(devtools)
+library(remotes)
+library(stringr)
+library(leaflet)
+library(mapview)
+library(riem)
+library(stringi)
+library(stringr)
+library(gifski)
+library(gganimate)
+library(gridExtra)
+library(viridis)
+```
+
+```{r}
+avocado <- read_csv("avocado.csv")
+head(avocado)
+tail(avocado)
+```
+
+
+```{r}
+region <- avocado %>% distinct(region)
+```
+
+Region Filter
+```{r}
+regions <- c("West", "Midsouth", "Northeast", "SouthCentral", "Southeast", "GreatLakes", "Plains")
+avocado_regions <- avocado %>%
+  filter(region == regions)
+head(avocado_regions)
+```
+unique(avocado$region)
+
+City Filter
+```{r}
+cities = c("Albany", "Boston", "Chicago", "Denver", "Jacksonville", "NewYork", "Philadelphia", "Portland", "Sacramento", "StLouis", "Atlanta", "Detroit", "LasVegas", "SanDeigo", "Syracuse", "Columbus", "Houston", "GrandRapids", "LosAngeles", "Nashville", "Pittsburgh", "SanFrancisco", "Tampa", "SanDi", "Boise", "Charlotte", "Indianapolis", "Louisville", "Orlando", "Roanoke", "Seattle", "Spokan")
+avocado_cities <- avocado %>%
+  filter(region == cities) 
+```
+unique(avocado$region)
+
+
+Total US
+```{r}
+avocado_us <- avocado %>%
+  filter(region == "TotalUS")
+head(avocado_us)
+```
+Avocado Prices over Time for the Total US Plot
+```{r}
+total_us_plot <- ggplot(data = avocado_us, mapping = aes(x =Date, y =AveragePrice, color =year)) +
+  geom_line() + 
+  labs(title = "Average Avocado Prices from 2015 to 2018", subtitle = "Data Source=Total of U.S", x = "Date", y = "Average Price") 
+total_us_plot
+total_us_plot + transition_reveal(Date)
+```
+My friend should note the flucuation of prices through the years.
+
+Avocado Prices for US Regions Plot - date, average price, total volume
+```{r}
+price_region_plot <- ggplot(data = avocado_regions, mapping = aes(x = Date, y = AveragePrice, color = `Total Volume`)) +
+  geom_point() + 
+  labs(title = "Average Avocado Prices from 2015 to 2018 with respect to volume", subtitle = "Data Source=Regions", x = "Date", y = "Average Price") + transition_time(Date)
+price_region_plot
+```
+Volume is higher when the average price is lower.
+
+Avocado Prices for Each US City 
+```{r}
+price_city_plot <- ggplot(data = avocado_cities, mapping = aes(x = Date, y = AveragePrice, color = `Total Volume`)) +
+  geom_line() +
+  facet_wrap(~region) +
+  labs(title = "Average Avocado Prices", subtitle = "From Each US City", x = "Date", y = "Average Price")+
+  scale_color_viridis(discrete = FALSE) + scale_y_continuous(labels = comma) 
+
+price_city_plot 
+```
+I would advise my friend to stay away from coast cities like Los Angeles, San Francisco, or Charlotte as that is where you will see the highest prices on average. However there are some minor exceptions such as Denver or Columbus.
+
+```{r}
+states <- sf::st_as_sf(map("state", plot = FALSE, fill = TRUE))
+```
+
+```{r}
+citiesbyvolume <- avocado_cities %>%
+  arrange(desc(`Total Volume`)) 
+head(citiesbyvolume)
+library(plyr)
+library(magrittr)
+```
+
+
+Option 3: Analyze Stock Prices 
+  Couldn't get geometry added to the regions in the avocado data, nor with population for option 2.
+```{r}
+avocado_stock <- tq_get(c("CVGW", "AVO"), get = "stock.prices", from = today()-years(2), to = today())
+head(avocado_stock)
+```
+
+```{r}
+avocado_stock_plot <- avocado_stock %>%
+  select(symbol, date, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  tk_xts(date_var = date)
+head(avocado_stock_plot)
+```
+
+Stock Price Visualization
+```{r}
+dygraph(avocado_stock_plot, main = "Stock Price Comparison for Calavo Growers VS Mission Produce") %>%
+  dyRebase(percent = TRUE) %>%
+  dyShading(from = today()-years(2), to = today()) %>%
+  dyRangeSelector()
+```
+
+The success of a product farm company is completed determined by whatever zeitgeist there may be surrounding a certain company and their ability to market their product effectively. As for the product itself, it's quality will be represented in any product farm company's stock performance, as noted above when both companies took a dip in the beginning of 2022 that they are still climbing back from. This is likely due to inflation. 
