@@ -1,0 +1,266 @@
+---
+title: "FINAL SEMESTER PROJECT"
+author: "Brink"
+date: "11/29/2022"
+output: 
+  html_document:
+    keep_md: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message = FALSE)
+```
+
+#Loading in all necessary packages. It is important to note that not all of these packages are going to be used. As a Data Scientist, I personally tend to lean towards a better safe than sorry approach to coding. 
+```{r}
+library(mice)
+library(ggcorrplot)
+library(usmap)
+library(ggmap)
+library(lubridate)
+library(ggplot2)
+library(readr)
+library(knitr)
+library(dplyr)
+library(forcats)
+library(downloader)
+library(corrplot)
+library(tidyquant)
+library(timetk)
+library(dygraphs)
+library(scales)
+library(tidyverse)
+library(sf)
+library(USAboundaries)
+library(maps)
+library(ggsflabel)
+library(devtools)
+library(remotes)
+library(stringr)
+library(leaflet)
+library(mapview)
+library(riem)
+library(stringi)
+library(stringr)
+library(gifski)
+library(gganimate)
+library(gridExtra)
+library(viridis)
+library(ggthemes)
+library(DT)
+library(plotly)
+library(corrgram)
+library(ellipse)
+library(RColorBrewer)
+```
+Introduction: Despite carrying the market momemtum going into the next generation, the rough announcement of the Xbox One with all it's it's media/kinect focused elements, it primed the PS4 for success, with Sony even taking direct jabs at Microsoft in it's marketing for the console. Because of this, many people who had been loyal to Xbox in the past were switching over, and game developers were too. Playstation secured more exclusive rights to games, and deals with third parties. PS4 is on track to be one of the most successful consoles of all time. 
+
+
+
+#Loading in seperate CSV files for each console respectively.
+```{r}
+xbox <- read_csv("XboxOne_GameSales.csv")
+```
+
+```{r}
+ps4 <- read_csv("PS4_GamesSales.csv")
+```
+
+#While both datasets have the same columns, that primes them for a full_join on said similarities, along with dropping any NA values that may be lingnering in the dataset as a part of general R tidying steps.
+```{r}
+bothconsoles <- full_join(xbox, ps4, by = c("Game", "Year", "Publisher", "Genre"))
+bothconsoles <- bothconsoles %>% drop_na()
+```
+
+#The dataset now designates the different columns as either '.x' or '.y' respectively based on what console they were coming from, so I wanted to rename the column names to make it clearler for audience interpretation as well as for myself.
+```{r}
+data <- bothconsoles %>%
+  rename("Xbox_North_America"="North America.x",
+         "Xbox_Europe"="Europe.x",
+         "Xbox_Japan"="Japan.x",
+         "Xbox_Rest_of_World"="Rest of World.x",
+         "Xbox_Global"="Global.x",
+         "PS4_North_America"="North America.y",
+         "PS4_Europe"="Europe.y",
+         "PS4_Japan"="Japan.y",
+         "PS4_Rest_of_World"="Rest of World.y",
+         "PS4_Global"="Global.y")
+```
+It is important to note that the numeric values shown in the dataset represent the amount of copies sold, which is the metric that most developers and analysts alike use as a rule of thumb when determining a games success. This is because of the rising popularity in digital storefronts that are essentially a free market. All that's needed to get a game on the store is to pass a very lax certification test, in which your game can be of whatever quality and whatever price that developer determines. Therefore, the revenue grossed from a game may not indicate it's true success, being that games have varying budgets that serve as the crutch for it's success factor. Indie games that have smaller budgets can make their money back with 100,000 copies sold, whereas a game as big as Call of Duty would have to close the doors of it's studios if their sales numbers ever dropped that low.
+
+
+#Adding a column that takes the combined sales from the Xbox and Playstation datasets in order to create one that sums the two together to get an idea of how many copies a game sold collectively. 
+```{r}
+finaldata <- data %>% rowwise() %>%
+  mutate(TotalSales = sum(Xbox_Global+PS4_Global))
+```
+
+#Converting TotalSales to numeric value to make it easier for data manipulation
+```{r}
+finaldat <- finaldata %>%
+  mutate(TotalSales = as.numeric(TotalSales))
+```
+
+#Creating an interactive datatable to serve as the center of answers for any questions that anyone pondering questions regarding the Xbox One/PS4 Generation. An example I used to see this was searching call of duty into the search to get a list of all the games in that respective franchise sales compared against each other. The same process can be done with any publisher, genre, game, year, etc. However, one interesting angle that is now easy to see is that noticably weak sales in the Japan Region for xbox. This is something that we will explore later on within the dataset. 
+
+```{r}
+finaldat <- finaldat %>% mutate_if(is.character, function(x) {Encoding(x) <- 'latin1'; return(x)})
+datatable(finaldat,filter='top', options=list(paging=FALSE))
+```
+
+
+Question 1: What relationship do the sales for each console respectively have with the total amount of copies sold for a game? Is it valid to assume that when it comes to third party releases, that the PS4 version is likely to sell more copies?
+
+
+#Getting a micro set of data to use for graph (more than 5 million copies sold)
+```{r}
+q1 <- finaldat %>%
+  filter(TotalSales > 5 )
+```
+
+
+```{r}
+Question1 <- q1 %>%
+ggplot() +
+    geom_point(aes(x=Year, y=TotalSales, size = Xbox_Global, color = Game)) +
+    geom_point(aes(x=Year, y=TotalSales, size = PS4_Global, color = Game)) +
+    ggtitle("Relationship between sales for each console respectively") +
+    scale_size(range = c(5, 10), name="Game") +
+    scale_color_viridis(discrete=TRUE, guide=FALSE) 
+```
+
+
+```{r}
+Question1F <- ggplotly(Question1) 
+Question1F
+```
+Right away we get to see some of the dominant franchises that reigned during this era. In almost every instance, the PS4 version sold more than the Xbox version. It is important to note that first party games, or console exclusives, are not included in the data due to them being removed by dropping null values because of how Halo would be a null inside of PS4 sales, and vice versa for a PS4 franchise like God of War, which each sit around 80 million copies sold. The market dominance of Take Two and Activision are on full display. Not only were the majority of gamers jumping ship to Sony's hardware, it also got the large share of third party deals that would often include bonus content, swaying gamers to lean towards team blue.
+
+
+Question 2: What is the correlation between region and sales ranking?
+`
+#Creating a concatenated dataset that only includes numeric values, as that is the only way a correlation plot can be created.
+```{r}
+numericdat <- finaldat[, c("Pos","Xbox_North_America","Xbox_Europe","Xbox_Japan", "Xbox_Rest_of_World", "PS4_North_America","PS4_Europe", "PS4_Japan", "PS4_Rest_of_World")] 
+```
+
+```{r}
+model.matrix(~0+., data=numericdat) %>% 
+  cor(use="pairwise.complete.obs") %>% 
+  ggcorrplot(show.diag = F, type="lower", lab=TRUE, lab_size=2, title="Correlation between Sales Rank and Region")
+```
+The main takeaway in terms of analysis here is the extremely weak correlation between the Xbox sales in Japan to the sales ranking positiion. CEO of Xbox Phil Spencer has gone on record to state that Xbox needs to make more of an intiative to have a presence in Japan, which so far they have held true too. A remastered version of the hit JRPG franchise, Persona, was just released on their flagship streaming service, Game Pass. While it may not turn the tide entirely, it will certainly help close their gap against Playstation. The other important takeaway is that North America is the most dominant region in the data far and away. This draws focus to the various amount of Japanese companies making their games geared towards western markets, in order to maximize sales appeal. 
+
+Question 3: What are the sales comparisons between the two consoles of the most popular annualized franchises?
+
+#The top selling annual franchises in the dataset are as follows: Call of Duty, Madden, NBA 2k, and Fifa. I wanted to do a more direct comparison of the sales data based on each console to further illustrate the dominance Playstation had when it came to the biggest games.
+
+#Data Filtering
+```{r}
+COD <- finaldat %>% filter(grepl('Call of Duty', Game))
+MADDEN <- finaldat %>% filter(grepl('Madden', Game))
+bball <- finaldat %>% filter(grepl('2K', Game))
+FIFA <- finaldat %>% filter(grepl('FIFA',Game))
+```
+
+#COD Chart
+```{r}
+codxbox <- ggplot(COD, aes(x = Year , y= Xbox_Global)) + labs(title="COD") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+codps <- ggplot(COD, aes(x = Year , y= PS4_Global)) + labs(title="COD") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17) 
+
+grid.arrange(codxbox,codps) 
+```
+#Peaked in 2015 with Black Ops 3. Fans consider this to be the peak of the advanced era of movement, as well as the peak for it's flagship Zombies mode.
+
+#Madden Chart
+```{r}
+maddenxbox <- ggplot(MADDEN, aes(x = Year , y= Xbox_Global)) + labs(title="Madden") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+maddenps <- ggplot(MADDEN, aes(x = Year , y= PS4_Global)) +  labs(title="Madden") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+grid.arrange(maddenxbox,maddenps)
+```
+#Peaked in 2015 with both consoles, marked when franchise reinvented a large porition of it's mechanics that are still in use today.
+
+#2k Chart
+```{r}
+bballxbox <- ggplot(bball, aes(x = Year , y= Xbox_Global)) + labs(title="2k") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+bballps <- ggplot(bball, aes(x = Year , y= PS4_Global)) + labs(title="2k") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+grid.arrange(bballxbox,bballps)
+```
+#Peaked in 2015 for both consoles
+
+#FIFA Chart
+```{r}
+fifaxbox <- ggplot(FIFA, aes(x = Year , y= Xbox_Global)) + labs(title="FIFA") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+fifaps <- ggplot(FIFA, aes(x = Year , y= PS4_Global)) + labs(title="FIFA") +
+  geom_bar(position="dodge", stat = "identity") +
+  ylim(0, 17)
+
+grid.arrange(fifaxbox,fifaps)
+```
+#PS4 saw continuous growth
+Other than Fifa, the other annual franchises saw themselves peak in 2015. My theory as to why this could be is that it was at this point that many companies started to create a microtransactional foundation that they can build off of to monetize future games. This practice stagnates quality and innovation, which thankfully fans have responded to with their wallet. 
+
+In correlation with annual franchises, I wanted to take a look at Publisher portfolios, as many of them center around a particuluar franchise. This way you can see which entry into which franchises were the most commericially sucessful.
+
+#Readable dataframe
+```{r}
+q5 <- finaldat %>%
+  filter(TotalSales > 10)
+```
+
+#Stacked Bar breakdown to show the top publishers, and their respected portfolio 
+```{r}
+p1 <- ggplot(q5, aes(fill=Game, y=TotalSales, x=Publisher)) + 
+    geom_bar(position="stack", stat="identity") +labs(title="Publisher Portfolio")
+p1
+```
+The key takeway for me with this graph is that Grand Theft Auto 5 sales beyond it's release year continue to propel it past games that have came out in later years, such as it's Red Dead Redemption 2. It is obvious as to why Rockstar Games would allocate their resources to it's live service development in order to milk as much money out of it as possible while fans continue to hold the spotlight on it. Also an important note, all of thes are sequels. This is discouraging as it would be nice to see more creative, innovative titles be introduced. It was during this generation that revenue became the ultimate factor of what got made versus what didn't.
+
+Question 4: How many games were released by genre?
+```{r}
+finaldat %>%
+  group_by(Genre) %>%
+  summarise(Count = n()) %>%
+  plot_ly(x = ~Genre,
+          y = ~Count,
+          type = "bar")
+```
+#Action games became the overwhelming genre of games during this generation. My theory as to why this could be is that as technology became more advanced during this generation, games tried to chase cinematic levels of action realism, especially when you look at examples like 'The Last of Us' or any of the 'Call of Duty' campaigns. This can happen to either negative or positive effect, as companies still continue to chase that goal. 
+
+
+Question 5: How many titles were released by year over time?
+```{r}
+color <- c("Titles released" = "red")
+finaldat %>% group_by(Year) %>% 
+  summarise(sales = sum(TotalSales),count = n()) %>% 
+  ggplot() + geom_line(aes(x=Year, y=count, group = 1, color = "Titles released")) + 
+  xlab("Year of Release") + ylab("Titles released") + 
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
+  scale_color_manual(values = color) + labs(title="Number of Titles Released Over Time",color = "")
+```
+ My analysis for this graph resulted in the conclusion that around 2016 and 2017, the generation was at it's arguable that it was at it's peak. The average length of development around this time was getting up to 5-6 years per game. Therefore, the high quality output of Rockstar is going to add to that mid range boost, as well as more consoles being out in the wild resulting in peak Call of Duty sales with more people having the ability to buy it after last generation support was cut off.
+
+
+### Conclusion: The Xbox One/PS4 era gave birth to the trend-chasing culture that we see today, that is dominated by annualized franchises, in-game currencies, half-baked content, all because of whatever sells, sells. There is little growth in terms of innovation outside of visual fidelity of games. Things are looking in the right direction however in 2022, with more genres flooding the respective console storefronts, an increased effort from Microsoft from it's third party partnerships and first party output, as well as Sony's priority on delivering the most AAA experiences gaming has to offer. The tide may still be in Sony's favor for the current generation, but things may change as Xbox and it's game pass intiative continue to grow. 
